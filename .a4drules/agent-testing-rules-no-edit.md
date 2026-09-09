@@ -86,7 +86,7 @@ Include metrics in the `metrics` array for each test case. Omitting the `metrics
 | `completeness` | Response includes all essential information |
 | `conciseness` | Response is brief but comprehensive |
 | `output_latency_milliseconds` | Time from request to response |
-| `instruction_following` | How well the response follows topic instructions |
+| `instruction_following` | How well the response follows subagent instructions |
 | `factuality` | How factual the response is |
 
 ### Metric Selection Guidance
@@ -125,7 +125,7 @@ testCases:
 
 - `role`: Either `user` or `agent`.
 - `message`: The text of the conversation turn.
-- `topic`: Required for `agent` role entries. The topic the agent used to generate the response.
+- `topic`: Required for `agent` role entries. The subagent the agent used to generate the response.
 
 The `utterance` field is the final user message that the test actually evaluates. The `conversationHistory` provides context leading up to it.
 

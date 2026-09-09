@@ -78,13 +78,13 @@ When the script finishes, note the username of the new agent user in the output.
    sf project deploy start -m AiAuthoringBundle:Local_Info_Agent
    ```
 
-The `.agent` file you just edited uses the Agent Script language. This single readable script file defines the entire agent, such as its topics, reasoning instructions, variables, and actions.
+The `.agent` file you just edited uses the Agent Script language. This single readable script file defines the entire agent, such as its subagents, reasoning instructions, variables, and actions.
 
 ## What's Inside This Project?
 
 | Component | Type | Purpose |
 |---|---|---|
-| `Local_Info_Agent.agent` | Agent Script | The agent definition — topics, reasoning, variables, and flow control |
+| `Local_Info_Agent.agent` | Agent Script | The agent definition — subagents, reasoning, variables, and flow control |
 | `CheckWeather` | Apex Class | Invocable Apex. Checks current weather conditions for a given location |
 | `CurrentDate` | Apex Class | Invocable Apex. Returns the current date for use by the agent |
 | `WeatherService` | Apex Class | Provides mock weather data for Coral Cloud Resort |
@@ -111,7 +111,7 @@ Try these prompts to see each type of agent action in action:
 - *"I'm interested in movies. What's showing nearby?"* — triggers a Prompt Template action.
 - *"When does the spa open?"* — triggers a Flow action.
 
-Return to `Local_Info_Agent.agent` in the editor and inspect the `local_weather` topic. Notice the pirate-themed instruction at the end of the reasoning block (around line 117). This single line controls how the agent responds — try changing it:
+Return to `Local_Info_Agent.agent` in the editor and inspect the `local_weather` subagent. Notice the pirate-themed instruction at the end of the reasoning block (around line 117). This single line controls how the agent responds — try changing it:
 
 1. Remove the pirate instruction from the Agent Script.
 2. Right-click inside the agent and select **AFDX: Validate this Agent**

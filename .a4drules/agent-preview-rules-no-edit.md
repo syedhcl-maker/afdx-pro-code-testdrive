@@ -50,7 +50,7 @@ Metadata source paths depend on the package directories defined in `sfdx-project
 **Simulated mode** (default) generates action outputs via LLM — the data is fake. **Live mode** (`--use-live-actions`) executes real backing code (Apex, Flows, Prompt Templates) and returns real outputs.
 
 Use simulated mode when:
-- **Backing code doesn't exist yet**: You're experimenting with instructions, topic routing, and conversation flow before building the actions. Simulated mode avoids needing to stub out actions.
+- **Backing code doesn't exist yet**: You're experimenting with instructions, subagent routing, and conversation flow before building the actions. Simulated mode avoids needing to stub out actions.
 - **No default agent user configured**: Live preview requires a real, active user created and assigned as the agent's `default_agent_user`. Simulated mode skips this requirement, reducing setup friction for initial experimentation and test drives.
 
 **Prefer live mode** (`--use-live-actions`) whenever backing code is deployed and a default agent user is configured. Live mode gives you real grounding behavior, real data flow through variables, and real action output formatting. If neither of the simulated mode scenarios above applies, use live mode.
@@ -106,7 +106,7 @@ Traces are stored locally at `.sfdx/agents/<BUNDLE_NAME>/sessions/<SESSION_ID>/`
 
 ### When to Use Traces
 
-- **Debugging unexpected behavior**: If the agent routes to the wrong topic, calls the wrong action, or produces an unexpected response, traces show the full reasoning chain — topic selection, action decisions, and response generation.
+- **Debugging unexpected behavior**: If the agent routes to the wrong subagent, calls the wrong action, or produces an unexpected response, traces show the full reasoning chain — subagent selection, action decisions, and response generation.
 - **Diagnosing grounding failures**: Traces include grounding check results showing which parts of the response were flagged as UNGROUNDED and why. This is essential for understanding intermittent grounding errors.
 - **Understanding action data flow**: Traces show the raw inputs sent to actions and outputs received, which helps verify variable binding and conditional branching.
 

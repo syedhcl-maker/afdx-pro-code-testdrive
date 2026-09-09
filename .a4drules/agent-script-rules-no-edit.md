@@ -106,7 +106,7 @@ language:
     ...
 
 # 7. START_AGENT (required) - Entry point
-start_agent topic_selector:
+start_agent agent_router:
     description: "..."
     reasoning:
         instructions: ->
@@ -114,8 +114,8 @@ start_agent topic_selector:
         actions:
             ...
 
-# 8. TOPICS (at least one required)
-topic my_topic:
+# 8. SUBAGENTS (at least one required)
+subagent my_topic:
     description: "..."
     reasoning:
         ...
@@ -127,7 +127,7 @@ topic my_topic:
 
 ## Block Internal Ordering
 
-### Within `start_agent` and `topic` blocks:
+### Within `start_agent` and `subagent` blocks:
 
 1. `description` (required)
 2. `system` (optional - for instruction overrides)
@@ -227,10 +227,10 @@ variables:
 - **Action parameter types:** `string`, `number`, `boolean`, `object`, `date`, `timestamp`, `currency`, `id`, `list[T]`, `datetime`, `time`, `integer`, `long`
 
 
-### Topic Block Structure
+### Subagent Block Structure
 
 ```agentscript
-topic my_topic:
+subagent my_topic:
     description: "What this topic handles"
 
     # Optional: Override system instructions for this topic
@@ -276,7 +276,7 @@ topic my_topic:
     # Optional: Runs after reasoning completes
     after_reasoning:
         if @variables.should_transition:
-            transition to @topic.next_topic
+            transition to @subagent.next_topic
 ```
 
 ---
@@ -364,21 +364,21 @@ reasoning:
                 set @variables.notified = @outputs.sent
             # Conditional transition
             if @outputs.needs_review:
-                transition to @topic.review
+                transition to @subagent.review
 ```
 
 ### Utility Actions (reasoning.actions only)
 
 - `@utils.escalate` — Escalate to a human agent. Syntax: `name: @utils.escalate`
-- `@utils.transition to` — Permanent handoff to another topic. Syntax: `name: @utils.transition to @topic.X`
+- `@utils.transition to` — Permanent handoff to another topic. Syntax: `name: @utils.transition to @subagent.X`
 - `@utils.setVariables` — Set variables via LLM slot-filling. Syntax: `name: @utils.setVariables` with `with var = ...`
-- `@topic.<name>` — Delegate to another topic (can return). Syntax: `name: @topic.X`
+- `@subagent.<name>` — Delegate to another topic (can return). Syntax: `name: @subagent.X`
 
 ```agentscript
 reasoning:
     actions:
         # Transition to another topic (permanent handoff)
-        go_to_checkout: @utils.transition to @topic.checkout
+        go_to_checkout: @utils.transition to @subagent.checkout
             description: "Move to checkout when ready"
             available when @variables.cart_has_items == True
 
@@ -388,7 +388,7 @@ reasoning:
             available when @variables.needs_human == True
 
         # Delegate to topic (can return)
-        consult_expert: @topic.expert_topic
+        consult_expert: @subagent.expert_topic
             description: "Consult the expert topic"
 
         # Set variables via LLM
@@ -407,14 +407,14 @@ reasoning:
 ### In `reasoning.actions` (LLM-selected):
 
 ```agentscript
-go_next: @utils.transition to @topic.target_topic
+go_next: @utils.transition to @subagent.target_topic
    description: "Description for LLM"
 ```
 
 ### In Directive Blocks (`before_reasoning`, `after_reasoning`):
 
 ```agentscript
-transition to @topic.target_topic
+transition to @subagent.target_topic
 ```
 
 - NEVER use `@utils.transition to` in directive blocks
@@ -446,14 +446,14 @@ Note: `else if` is not currently supported.
 ```agentscript
 before_reasoning:
     if @variables.not_authenticated:
-        transition to @topic.login
+        transition to @subagent.login
 
     if @variables.session_expired:
-        transition to @topic.session_expired
+        transition to @subagent.session_expired
 
 after_reasoning:
     if @variables.completed:
-        transition to @topic.summary
+        transition to @subagent.summary
 ```
 
 ### Conditional Action Availability
@@ -514,7 +514,7 @@ instructions: ->
 ### Resource References
 
 - `@actions.<name>` - Reference action defined in topic's `actions` block
-- `@topic.<name>` - Reference a topic by name
+- `@subagent.<name>` - Reference a topic by name
 - `@variables.<name>` - Reference a variable
 - `@outputs.<name>` - Reference action output (in post-action context)
 - `@inputs.<name>` - Reference action input (in procedure context)
@@ -546,16 +546,16 @@ variables:
         source: @MessagingSession.MessagingEndUserId
         description: "This variable may also be referred to as MessagingEndUser Id"
 
-start_agent topic_selector:
-    description: "Route the customer to the appropriate topic"
+start_agent agent_router:
+    description: "Route the customer to the appropriate subagent"
     reasoning:
         actions:
-            go_order_info: @utils.transition to @topic.order_info
+            go_order_info: @utils.transition to @subagent.order_info
                 description: "Route to order info when the customer asks about an order"
-            go_account_help: @utils.transition to @topic.account_help
+            go_account_help: @utils.transition to @subagent.account_help
                 description: "Route to account help for account-related questions"
 
-topic order_info:
+subagent order_info:
     description: "Look up order status and provide updates to the customer"
 
     before_reasoning:
@@ -576,12 +576,12 @@ topic order_info:
                 description: "Look up order status by customer ID"
                 with customer_id = ...
 
-            go_account: @utils.transition to @topic.account_help
+            go_account: @utils.transition to @subagent.account_help
                 description: "Switch to account help if the customer asks about their account"
 
     after_reasoning:
         if @variables.customer_name:
-            transition to @topic.account_help
+            transition to @subagent.account_help
 
     actions:
         fetch_order:
@@ -600,7 +600,7 @@ topic order_info:
                     is_displayable: True
                     filter_from_agent: False
 
-topic account_help:
+subagent account_help:
     description: "Help customers with account-related questions"
 
     reasoning:
@@ -609,7 +609,7 @@ topic account_help:
               You can assist with password resets, profile updates, and billing inquiries.
 
         actions:
-            go_order: @utils.transition to @topic.order_info
+            go_order: @utils.transition to @subagent.order_info
                 description: "Switch to order info if the customer asks about an order"
             escalate: @utils.escalate
                 description: "Connect with a human agent if the customer requests it"
@@ -658,7 +658,7 @@ Variable-bound inputs (e.g., `with param = @variables.x`) increase loop risk bec
 ### Mitigations
 
 - **Instructions (most common fix)**: Add explicit post-action instructions: "After receiving results from {!@actions.X}, present them to the guest. Do NOT call the action again."
-- **Post-action transitions**: Use `transition to @topic.other_topic` after the action completes to move the agent out of the topic, breaking the cycle.
+- **Post-action transitions**: Use `transition to @subagent.other_topic` after the action completes to move the agent out of the topic, breaking the cycle.
 - **Input binding**: Use `...` (LLM slot-fill) instead of variable binding when appropriate — this requires the LLM to actively decide to fill the input each cycle.
 
 ---
@@ -688,7 +688,7 @@ Before finalizing an Agent Script, verify:
 - [ ] `config` block has `agent_name` (and `default_agent_user` for service agents)
 - [ ] `system` block has `messages.welcome`, `messages.error`, and `instructions`
 - [ ] `start_agent` block exists with at least one transition action
-- [ ] Each `topic` has a `description` and `reasoning` block
+- [ ] Each `subagent` has a `description` and `reasoning` block
 - [ ] All `mutable` variables have default values
 - [ ] All `linked` variables have `source` specified (and NO default value)
 - [ ] Action `target` uses valid format (`flow://`, `apex://`, etc.)
@@ -709,14 +709,14 @@ Before finalizing an Agent Script, verify:
 
     ```agentscript
     # WRONG in reasoning.actions
-    go_next: transition to @topic.next
+    go_next: transition to @subagent.next
 
     # CORRECT in reasoning.actions
-    go_next: @utils.transition to @topic.next
+    go_next: @utils.transition to @subagent.next
 
     # CORRECT in directive blocks
     after_reasoning:
-        transition to @topic.next
+        transition to @subagent.next
     ```
 
 2. **Missing default for mutable:**
@@ -775,7 +775,7 @@ Before finalizing an Agent Script, verify:
 
     ```agentscript
     # WRONG - utilities don't support post-action directives
-    go_next: @utils.transition to @topic.next
+    go_next: @utils.transition to @subagent.next
         set @variables.navigated = True
 
     # CORRECT - only @actions support post-action directives

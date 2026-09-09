@@ -47,7 +47,7 @@ Here are the step types and what to look for:
 |-----------|-------------------|
 | `UserInputStep` | The user's utterance that triggered this turn |
 | `SessionInitialStateStep` | Variable values and directive context at turn start |
-| `NodeEntryStateStep` | Which agent/topic is executing and its full state snapshot |
+| `NodeEntryStateStep` | Which agent/subagent is executing and its full state snapshot |
 | `VariableUpdateStep` | A variable was changed — shows old value, new value, and reason |
 | `BeforeReasoningIterationStep` | `before_reasoning` block ran — lists actions executed |
 | `EnabledToolsStep` | Which tools/actions are available to the LLM for this reasoning cycle |
@@ -59,15 +59,15 @@ Here are the step types and what to look for:
 
 ### Diagnostic Patterns
 
-**To diagnose wrong topic routing:**
-1. Find the `LLMStep` where `agent_name` is `topic_selector`
+**To diagnose wrong subagent routing:**
+1. Find the `LLMStep` where `agent_name` is `agent_router`
 2. Check `tools_sent` — are the expected transition tools listed?
 3. Check `response_messages` — which tool did the LLM select?
-4. Check the `messages_sent` system prompt — does the topic selector have enough
+4. Check the `messages_sent` system prompt — does the agent router have enough
    context to route correctly?
 
 **To diagnose actions not firing:**
-1. Find the `EnabledToolsStep` for the topic — is the expected action listed?
+1. Find the `EnabledToolsStep` for the subagent — is the expected action listed?
 2. If missing, check the `available when` condition on the reasoning action —
    look at the `NodeEntryStateStep` to see if the gating variable has the expected value
 3. If listed but not called, check the `LLMStep` response — did the LLM choose
@@ -91,12 +91,12 @@ Here are the step types and what to look for:
    paraphrasing or inferring
 
 **To diagnose loops:**
-1. Look for repeated `TransitionStep` entries — is the same topic being entered
+1. Look for repeated `TransitionStep` entries — is the same subagent being entered
    multiple times?
 2. Check `BeforeReasoningIterationStep` — are `before_reasoning` actions running
    on every cycle unconditionally?
 3. Look at `after_reasoning` transitions — is there an unconditional transition
-   back to a topic that triggers re-entry?
+   back to a subagent that triggers re-entry?
 4. Check if the loop involves the grounding retry mechanism — the platform injects
    an "Error: The system determined your original response was ungrounded" message
    as a user turn and retries. After two UNGROUNDED failures, the agent gives up
@@ -108,7 +108,7 @@ Here are the step types and what to look for:
 2. Look backward through the trace for `ReasoningStep` entries with
    `category: "UNGROUNDED"` — two consecutive UNGROUNDED results cause this
 3. If no grounding failures, look for `FunctionStep` entries with error outputs
-4. Check if a topic transition failed (missing target topic, circular reference)
+4. Check if a subagent transition failed (missing target subagent, circular reference)
 
 ---
 
@@ -127,7 +127,7 @@ When the platform's grounding checker flags a response as UNGROUNDED:
 3. If the second attempt is also UNGROUNDED, the agent gives up and returns the
    system error message ("I apologize, but I encountered an unexpected error")
 4. This retry is visible in the trace as repeated `LLMStep` → `ReasoningStep` pairs
-   for the same topic
+   for the same subagent
 
 **Important**: The grounding checker is non-deterministic. The same response may be
 flagged as UNGROUNDED on one attempt and GROUNDED on the next. When diagnosing
@@ -140,7 +140,7 @@ inferences (e.g., "today" = specific date, unit conversions, paraphrased values)
 
 The `LLMStep` is the most information-rich step type. It contains:
 
-- `agent_name` — which topic or selector is running
+- `agent_name` — which subagent or selector is running
 - `prompt_name` — internal prompt identifier
 - `messages_sent` — the FULL prompt sent to the LLM (system message, conversation
   history, and injected instructions)
@@ -166,7 +166,7 @@ For any reported agent behavior issue:
 2. **Locate** — end the session to get trace files; find the failing turn in transcript
 3. **Read the trace** — open the trace file for the failing turn
 4. **Follow the execution** — read steps in order, noting:
-   - Which topic was selected?
+   - Which subagent was selected?
    - What state were variables in?
    - What actions were available vs. invoked?
    - What did the LLM actually see in its prompt?
